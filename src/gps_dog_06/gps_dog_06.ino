@@ -11,42 +11,54 @@
  * 
  */
 
-// written for RoboJax.com 
-String inputString = ""; // a string to hold incoming data
+// written for RoboJax.com
+String inputString = "";        // a string to hold incoming data
 boolean stringComplete = false; // whether the string is complete
 String signal = "$GPGLL";
-void setup() {
-    // initialize serial:
-    Serial.begin(9600);
+void setup()
+{
+    // initialize Serial:
+    Serial.begin(115200);
+    // initialize Serial2:
+    Serial2.begin(9600);
     // reserve 200 bytes for the inputString:
     inputString.reserve(200);
 }
 
-void loop() {
+void loop()
+{
+    Serial2Event();
+
     // print the string when a newline arrives:
-    if (stringComplete) {
+    if (stringComplete)
+    {
+        Serial.println("<<<GPS>>>");
+        Serial.println(inputString);
+        //
         String BB = inputString.substring(0, 6);
-        if (BB == signal) {
+        Serial.println(BB);
+        if (1)
+        {
             String LAT = inputString.substring(7, 17);
             int LATperiod = LAT.indexOf('.');
             int LATzero = LAT.indexOf('0');
-            if (LATzero == 0) {
+            if (LATzero == 0)
+            {
                 LAT = LAT.substring(1);
             }
 
             String LON = inputString.substring(20, 31);
             int LONperiod = LON.indexOf('.');
             int LONTzero = LON.indexOf('0');
-            if (LONTzero == 0) {
+            if (LONTzero == 0)
+            {
                 LON = LON.substring(1);
             }
 
             Serial.println(LAT);
             Serial.println(LON);
-
         }
 
-        // Serial.println(inputString);
         // clear the string:
         inputString = "";
         stringComplete = false;
@@ -54,20 +66,27 @@ void loop() {
 }
 
 /*
-SerialEvent occurs whenever a new data comes in the
-hardware serial RX. This routine is run between each
+Serial2Event occurs whenever a new data comes in the
+hardware Serial2 RX. This routine is run between each
 time loop() runs, so using delay inside loop can delay
 response. Multiple bytes of data may be available.
 */
-void serialEvent() {
-    while (Serial.available()) {
+void Serial2Event()
+{
+    while (Serial2.available())
+    {
         // get the new byte:
-        char inChar = (char) Serial.read();
+        char inChar = (char)Serial2.read();
+        Serial.print(inChar);
+        // if(inChar=='\r') Serial.print("<CR>");
+        // if(inChar=='\n') Serial.print("<LF>");
+
         // add it to the inputString:
         inputString += inChar;
         // if the incoming character is a newline, set a flag
         // so the main loop can do something about it:
-        if (inChar == '\n') {
+        if (inChar == '\n')
+        {
             stringComplete = true;
         }
     }
