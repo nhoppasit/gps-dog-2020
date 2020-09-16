@@ -283,7 +283,7 @@ void serialEvent2()
     {
         // get the new byte:
         char inChar = (char)Serial2.read();
-        
+
         // if(inChar=='\r') Serial.print("<CR>");
         // if(inChar=='\n') Serial.print("<LF>");
 
@@ -356,4 +356,55 @@ void PrintCheckSum_S1(byte chk)
     if (chk < 0x10)
         Serial.print('0');
     Serial.print(chk, HEX);
+}
+// -----------------------------------------------------------------------
+void outputMsg(String msg)
+{
+    msg.toCharArray(CRCbuffer, sizeof(CRCbuffer)); // put complete string into CRCbuffer
+    byte crc = convertToCRC(CRCbuffer);
+
+    Serial.print(msg); // omit CRC in console msg
+
+    SERIALN.print(msg); // repeat for UART output
+    if (crc < 16)
+        SERIALN.print("0"); // add leading 0 if needed
+    SERIALN.println(crc, HEX);
+}
+
+// -----------------------------------------------------------------------
+byte convertToCRC(char *buff)
+{
+    // NMEA CRC: XOR each byte with previous for all chars between '$' and '*'
+    char c;
+    byte i;
+    byte start_with = 0;
+    byte end_with = 0;
+    byte crc = 0;
+
+    for (i = 0; i < buff_len; i++)
+    {
+        c = buff[i];
+        if (c == '$')
+        {
+            start_with = i;
+        }
+        if (c == '*')
+        {
+            end_with = i;
+        }
+    }
+    if (end_with > start_with)
+    {
+        for (i = start_with + 1; i < end_with; i++)
+        {                        // XOR every character between '$' and '*'
+            crc = crc ^ buff[i]; // compute CRC
+        }
+    }
+    else
+    { // else if error, print a msg (to both ports)
+        Serial.println("CRC ERROR");
+        Serial.println("CRC ERROR");
+    }
+    return crc;
+    //based on code by Elimeléc López - July-19th-2013
 }
