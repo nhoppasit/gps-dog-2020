@@ -1,15 +1,10 @@
 /*
   26-05-2020
 */
-#define DEVICE_NAME "GPS DOG TAG PROJECT 9:41 AM 9/16/2020
+#define DEVICE_NAME "GPS DOG TAG PROJECT 9:41 AM 9/16/2020"
 //
 #define _S1_ETX_TRACE_ 0
 #define _S2_ETX_TRACE_ 0
-#define _S3_ETX_TRACE_ 0
-//
-#define EEPROM_LORA 0
-#define EEPROM_RS485 100
-#define EEPROM_TAG_ID 200
 //
 #define CMD_INFO "?"
 #define CMD_TRACE "D"
@@ -30,21 +25,6 @@
 #define STX3 '$'
 #define ETX3 '\n'
 //
-#include "DHT.h"
-#include <EEPROM.h>
-//
-#define DHTPIN PB9
-//#define DHTTYPE DHT11   // DHT 11
-#define DHTTYPE DHT22 // DHT 22  (AM2302), AM2321
-//#define DHTTYPE DHT21   // DHT 21 (AM2301)
-DHT dht(DHTPIN, DHTTYPE);
-const int DHT_TIME = 2000;
-unsigned long t0Dht = 0;
-bool DHT_FLAG = true;
-float RHumidity;
-float Temperature;
-float HeatIndex;
-//
 String inputString = "";     // a String to hold incoming data
 bool stringComplete = false; // whether the string is complete
 bool STX_COME = false;
@@ -52,10 +32,6 @@ bool STX_COME = false;
 String inputString2 = "";     // a String to hold incoming data
 bool stringComplete2 = false; // whether the string is complete
 bool STX_COME2 = false;
-//
-String inputString3 = "";     // a String to hold incoming data
-bool stringComplete3 = false; // whether the string is complete
-bool STX_COME3 = false;
 //
 unsigned long t0Blink = 0;
 bool blinkState = 0;
