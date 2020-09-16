@@ -1,81 +1,103 @@
-String data="";
+String data = "";
 int mark = 0;
-boolean Mark_Start=false;
-boolean valid=false;
-String GGAUTCtime,GGAlatitude,GGAlongitude,GPStatus,SatelliteNum,HDOPfactor,Height,
-PositionValid,RMCUTCtime,RMClatitude,RMClongitude,Speed,Direction,Date,Declination,Mode;
-void setup(){
+boolean Mark_Start = false;
+boolean valid = false;
+String GGAUTCtime, GGAlatitude, GGAlongitude, GPStatus, SatelliteNum, HDOPfactor, Height,
+    PositionValid, RMCUTCtime, RMClatitude, RMClongitude, Speed, Direction, Date, Declination, Mode;
+void setup()
+{
+  pinMode(PC13, OUTPUT);
+  digitalWrite(PC13, LOW);
+
   Serial.begin(9600);
-  Serial1.begin(9600);
+  Serial2.begin(9600);
   Serial.println(0);
   delay(1000);
 }
 
-void loop(){
-  while (Serial1.available()> 0){
-    if(Mark_Start){
-      data=reader();
+void loop()
+{
+  while (Serial2.available() > 0)
+  {
+    if (Mark_Start)
+    {
+      digitalWrite(PC13, LOW);
+      data = reader();
       Serial.println(data);
-      if(data.equals("GPGGA")){
+      if (data.equals("GPGGA"))
+      {
         //Serial.println(1);
-        GGAUTCtime=reader();
-        GGAlatitude=reader();
-        GGAlatitude+=reader();
-        GGAlongitude=reader();
-        GGAlongitude+=reader();
-        GPStatus=reader();
-        SatelliteNum=reader();
-        HDOPfactor=reader();
-        Height=reader();
-        Mark_Start=false;
-        valid=true;
-        data="";
-
+        GGAUTCtime = reader();
+        GGAlatitude = reader();
+        GGAlatitude += reader();
+        GGAlongitude = reader();
+        GGAlongitude += reader();
+        GPStatus = reader();
+        SatelliteNum = reader();
+        HDOPfactor = reader();
+        Height = reader();
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        valid = true;
+        data = "";
       }
-      else if(data.equals("GPGSA")){
+      else if (data.equals("GPGSA"))
+      {
         Serial.println(2);
-        Mark_Start=false;
-        data="";
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        data = "";
       }
-      else if(data.equals("GPGSV")){
+      else if (data.equals("GPGSV"))
+      {
         Serial.println(3);
-        Mark_Start=false;
-        data="";
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        data = "";
       }
-      else if(data.equals("GPRMC")){
+      else if (data.equals("GPRMC"))
+      {
         //Serial.println(4);
-        RMCUTCtime=reader();
-        PositionValid=reader();
-        RMClatitude=reader();
-        RMClatitude+=reader();
-        RMClongitude=reader();
-        RMClongitude+=reader();
-        Speed=reader();
-        Direction=reader();
-        Date=reader();
-        Declination=reader();
-        Declination+=reader();
-        Mode=reader();
-        valid=true;
-        Mark_Start=false;
-        data="";
+        RMCUTCtime = reader();
+        PositionValid = reader();
+        RMClatitude = reader();
+        RMClatitude += reader();
+        RMClongitude = reader();
+        RMClongitude += reader();
+        Speed = reader();
+        Direction = reader();
+        Date = reader();
+        Declination = reader();
+        Declination += reader();
+        Mode = reader();
+        valid = true;
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        data = "";
       }
-      else if(data.equals("GPVTG")){
+      else if (data.equals("GPVTG"))
+      {
         Serial.println(5);
-        Mark_Start=false;
-        data="";
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        data = "";
       }
-      else{
+      else
+      {
         Serial.println(6);
-        Mark_Start=false;
-        data="";
+        Mark_Start = false;
+        digitalWrite(PC13, HIGH);
+        data = "";
       }
     }
-    if(valid){
-      if(PositionValid=="A"){
+    if (valid)
+    {
+      if (PositionValid == "A")
+      {
         Serial.println("Position Valid");
       }
-      else{
+      else
+      {
         Serial.println("Your position is not valid.");
       }
       Serial.print("Date:");
@@ -107,44 +129,53 @@ void loop(){
       Serial.print("Declination:");
       Serial.println(Declination);
       Serial.print("Mode:");
-      Serial.println(Mode);     
-      valid=false;
+      Serial.println(Mode);
+      valid = false;
     }
-    if(Serial1.find("$")){
+    if (Serial2.find("$"))
+    {
       Serial.println("capture");
-      Mark_Start=true;
+      Mark_Start = true;
     }
   }
-
 }
 
-String reader(){
-  String value="";
+String reader()
+{
+  String value = "";
   int temp;
 startover:
-  while (Serial1.available() > 0){
+  while (Serial2.available() > 0)
+  {
     delay(2);
-    temp=Serial1.read();
-    if((temp==',')||(temp=='*')){
-      if(value.length()){
+    temp = Serial2.read();
+    Serial.print((char)temp);
+    if ((temp == ',') || (temp == '*'))
+    {
+      if (value.length())
+      {
         //Serial.println("meaningful message");
         return value;
       }
-      else {
+      else
+      {
         //Serial.println("empty");
         return "";
-      }     
+      }
     }
-    else if(temp=='$'){
+    else if (temp == '$')
+    {
       //Serial.println("failure");
-      Mark_Start=false;
+      Mark_Start = false;
     }
-    else{
+    else
+    {
       //Serial.println("add");
-      value+=char(temp);
+      value += char(temp);
     }
   }
-  while (!(Serial1.available()>0)){
+  while (!(Serial2.available() > 0))
+  {
   }
   goto startover;
 }
