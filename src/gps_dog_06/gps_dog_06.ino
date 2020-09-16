@@ -37,7 +37,7 @@ void loop()
         //
         String BB = inputString.substring(0, 6);
         Serial.println(BB);
-        if (1)
+        if (BB == signal)
         {
             String LAT = inputString.substring(7, 17);
             int LATperiod = LAT.indexOf('.');

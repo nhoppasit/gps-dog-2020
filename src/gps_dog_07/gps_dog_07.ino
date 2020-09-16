@@ -5,6 +5,8 @@
 
 #define DEVICE_NAME "GPS DOG TAG PROJECT 9:41 AM 9/16/2020"
 
+#define _S1_ETX_TRACE_ 0
+
 #define CMD_INFO "?"
 #define CMD_TRACE "D"
 #define CMD_BLINK_OFF "b"
@@ -31,7 +33,10 @@ bool blinkFlag = false;
 int blinkTime = 500;
 ////
 bool TRACE_BLINK = false;
+bool TRACE_GPS = false;
+bool TRACE_UART = false;
 //
+String signal = "$GPGLL";
 //
 void setup()
 {
@@ -59,19 +64,32 @@ void loop()
     // MCU information
     info(stringComplete && inputString.equals(CMD_INFO));
 
+    ToggleTraceUart(stringComplete &&
+                    inputString.substring(0, 1).equals(CMD_TRACE) &&
+                    inputString.substring(1, 2).equals("0"));
     ToggleTraceBlink(stringComplete &&
                      inputString.substring(0, 1).equals(CMD_TRACE) &&
-                     inputString.substring(1, 2).equals("0"));
+                     inputString.substring(1, 2).equals("1"));
+    ToggleTraceGps(stringComplete &&
+                   inputString.substring(0, 1).equals(CMD_TRACE) &&
+                   inputString.substring(1, 2).equals("2"));
 
-    // print the string when a newline arrives:
-    if (stringComplete2)
+    PrintGps(!TRACE_GPS && stringComplete2);
+
+    ClearSerialEvent(stringComplete);
+    ClearSerialEvent2(stringComplete2);
+}
+//
+void PrintGps(bool flag)
+{
+    if (flag)
     {
+        String BB = inputString2.substring(0, 6);
         Serial.println("<<<GPS>>>");
         Serial.println(inputString2);
-        //
-        String BB = inputString2.substring(0, 6);
         Serial.println(BB);
-        if (1)
+        //
+        if (BB == signal)
         {
             String LAT = inputString2.substring(7, 17);
             int LATperiod = LAT.indexOf('.');
@@ -93,8 +111,15 @@ void loop()
             Serial.println(LON);
         }
     }
-
-    ClearSerialEvent(stringComplete || stringComplete2);
+}
+//
+void ToggleTraceUart(bool flag)
+{
+    if (flag)
+    {
+        TRACE_UART = !TRACE_UART;
+        Serial.println("Toggle UART trace.");
+    }
 }
 void ToggleTraceBlink(bool flag)
 {
@@ -102,6 +127,14 @@ void ToggleTraceBlink(bool flag)
     {
         TRACE_BLINK = !TRACE_BLINK;
         Serial.println("Toggle blink trace.");
+    }
+}
+void ToggleTraceGps(bool flag)
+{
+    if (flag)
+    {
+        TRACE_GPS = !TRACE_GPS;
+        Serial.println("Toggle GPS trace.");
     }
 }
 /*
@@ -250,7 +283,7 @@ void serialEvent2()
     {
         // get the new byte:
         char inChar = (char)Serial2.read();
-        Serial.print(inChar);
+        
         // if(inChar=='\r') Serial.print("<CR>");
         // if(inChar=='\n') Serial.print("<LF>");
 
@@ -261,6 +294,8 @@ void serialEvent2()
         if (inChar == '\n')
         {
             stringComplete2 = true;
+            if (TRACE_GPS)
+                Serial.print(inputString2);
         }
     }
 }
@@ -272,13 +307,28 @@ void ClearSerialEvent(bool flag)
         stringComplete = false;
         inputString = "";
 
+        if (TRACE_UART)
+        {
+            Serial.println("<<<Clear serial event>>>");
+            Serial.println("-----------------------------------------------------------------");
+            Serial.println();
+        }
+    }
+}
+void ClearSerialEvent2(bool flag)
+{
+    if (flag)
+    {
         STX_COME2 = false;
         stringComplete2 = false;
         inputString2 = "";
 
-        Serial.println("<<<Clear serial event>>>");
-        Serial.println("-----------------------------------------------------------------");
-        Serial.println();
+        if (TRACE_UART)
+        {
+            Serial.println("<<<Clear serial event>>>");
+            Serial.println("-----------------------------------------------------------------");
+            Serial.println();
+        }
     }
 }
 //
