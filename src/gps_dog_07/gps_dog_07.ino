@@ -1,12 +1,13 @@
-
-
 // Modify from RoboJax.com
 // By Nhoppasit S.
 
 #define DEVICE_NAME "GPS DOG TAG PROJECT 9:41 AM 9/16/2020"
-
+//
 #define _S1_ETX_TRACE_ 0
-
+//
+const byte buff_len = 90;
+char CRCbuffer[buff_len];
+//
 #define CMD_INFO "?"
 #define CMD_TRACE "D"
 #define CMD_BLINK_OFF "b"
@@ -34,6 +35,7 @@ int blinkTime = 500;
 ////
 bool TRACE_BLINK = false;
 bool TRACE_GPS = false;
+bool TRACE_CRC = false;
 bool TRACE_UART = false;
 //
 String signal = "$GPGLL";
@@ -73,6 +75,9 @@ void loop()
     ToggleTraceGps(stringComplete &&
                    inputString.substring(0, 1).equals(CMD_TRACE) &&
                    inputString.substring(1, 2).equals("2"));
+    ToggleTraceCrc(stringComplete &&
+                   inputString.substring(0, 1).equals(CMD_TRACE) &&
+                   inputString.substring(1, 2).equals("3"));
 
     PrintGps(!TRACE_GPS && stringComplete2);
 
@@ -135,6 +140,14 @@ void ToggleTraceGps(bool flag)
     {
         TRACE_GPS = !TRACE_GPS;
         Serial.println("Toggle GPS trace.");
+    }
+}
+void ToggleTraceCrc(bool flag)
+{
+    if (flag)
+    {
+        TRACE_CRC = !TRACE_CRC;
+        Serial.println("Toggle CRC trace.");
     }
 }
 /*
@@ -295,7 +308,9 @@ void serialEvent2()
         {
             stringComplete2 = true;
             if (TRACE_GPS)
-                Serial.print(inputString2);
+            {
+                outputMsg(inputString2);
+            }
         }
     }
 }
@@ -360,30 +375,17 @@ void PrintCheckSum_S1(byte chk)
 // -----------------------------------------------------------------------
 void outputMsg(String msg)
 {
-    msg.toCharArray(CRCbuffer, sizeof(CRCbuffer)); // put complete string into CRCbuffer
-    byte crc = convertToCRC(CRCbuffer);
-
-    Serial.print(msg); // omit CRC in console msg
-
-    SERIALN.print(msg); // repeat for UART output
-    if (crc < 16)
-        SERIALN.print("0"); // add leading 0 if needed
-    SERIALN.println(crc, HEX);
-}
-
-// -----------------------------------------------------------------------
-byte convertToCRC(char *buff)
-{
-    // NMEA CRC: XOR each byte with previous for all chars between '$' and '*'
     char c;
     byte i;
     byte start_with = 0;
     byte end_with = 0;
-    byte crc = 0;
+
+    Serial.print(msg);                             // omit CRC in console msg
+    msg.toCharArray(CRCbuffer, sizeof(CRCbuffer)); // put complete string into CRCbuffer
 
     for (i = 0; i < buff_len; i++)
     {
-        c = buff[i];
+        c = CRCbuffer[i];
         if (c == '$')
         {
             start_with = i;
@@ -391,19 +393,52 @@ byte convertToCRC(char *buff)
         if (c == '*')
         {
             end_with = i;
+            break;
         }
+    }
+    //
+    byte crc = convertToCRC(CRCbuffer, start_with, end_with);
+    if (TRACE_CRC)
+    {
+        Serial.println();
+        Serial.print("CRC = ");
+        if (crc < 16)
+            Serial.print("0"); // add leading 0 if needed
+        Serial.println(crc, HEX);
+        //
+        Serial.print("CRC text = ");
+        Serial.println(msg.substring(end_with + 1, end_with + 3));
+    }
+}
+
+// -----------------------------------------------------------------------
+byte convertToCRC(char *buff, byte start_with, byte end_with)
+{
+    byte i;
+    byte crc;
+
+    // NMEA CRC: XOR each byte with previous for all chars between '$' and '*'
+    if (TRACE_CRC)
+    {
+        Serial.println();
+        Serial.print("Start with = ");
+        Serial.println(start_with);
+        Serial.print("End with = ");
+        Serial.println(end_with);
     }
     if (end_with > start_with)
     {
         for (i = start_with + 1; i < end_with; i++)
-        {                        // XOR every character between '$' and '*'
+        { // XOR every character between '$' and '*'
+            if (TRACE_CRC)
+                Serial.print(buff[i]);
             crc = crc ^ buff[i]; // compute CRC
         }
     }
     else
     { // else if error, print a msg (to both ports)
-        Serial.println("CRC ERROR");
-        Serial.println("CRC ERROR");
+        if (TRACE_CRC)
+            Serial.println("CRC ERROR");
     }
     return crc;
     //based on code by Elimeléc López - July-19th-2013
