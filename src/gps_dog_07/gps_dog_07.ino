@@ -90,14 +90,14 @@ void PrintGps(bool flag)
     if (flag)
     {
         String BB = inputString2.substring(0, 6);
-        Serial.println("<<<GPS>>>");
-        Serial.println(inputString2);
-        Serial.println(BB);
+        // Serial.println("<<<GPS>>>");
+        // Serial.println(inputString2);
+        Serial.print(BB);
         //
-        if (BB == signal)
+        if (1) //(BB == signal)
         {
             String LAT = inputString2.substring(7, 17);
-            int LATperiod = LAT.indexOf('.');
+            int LATperiod = LAT.indexOf(',');
             int LATzero = LAT.indexOf('0');
             if (LATzero == 0)
             {
@@ -105,16 +105,23 @@ void PrintGps(bool flag)
             }
 
             String LON = inputString2.substring(20, 31);
-            int LONperiod = LON.indexOf('.');
+            int LONperiod = LON.indexOf(',');
             int LONTzero = LON.indexOf('0');
             if (LONTzero == 0)
             {
                 LON = LON.substring(1);
             }
 
-            Serial.println(LAT);
-            Serial.println(LON);
+            if (-1 == LATperiod && -1 == LONperiod)
+            {
+                Serial.print(", ");
+                Serial.print(LAT); 
+                Serial.print(", ");
+                Serial.print(LON);
+                
+            }                        
         }
+        Serial.println();
     }
 }
 //
