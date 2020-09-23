@@ -20,6 +20,7 @@ char CRCbuffer[buff_len];
 #define STX3 '$'
 #define ETX3 '\n'
 //
+#include <TinyGPS++.h>
 #include <SPI.h>
 #include <SD.h>
 //
@@ -45,6 +46,8 @@ bool TRACE_CRC = false;
 bool TRACE_UART = false;
 //
 String signal = "$GPGLL";
+//
+TinyGPSPlus gps;
 //
 void setup()
 {
@@ -73,7 +76,45 @@ void setup()
 void loop()
 {
     serialEvent();
-    serialEvent2();
+    if (TRACE_GPS)
+    {
+        serialEvent2();
+    }
+    else
+    {
+        while (Serial2.available() > 0)
+        {
+            gps.encode(Serial2.read());
+            if (gps.location.isUpdated())
+            {
+                Serial.print("Longitude= ");
+                Serial.print(gps.location.lng(), 6);
+                Serial.print(" Latitude= ");
+                Serial.print(gps.location.lat(), 6);
+
+                // open the file. note that only one file can be open at a time,
+                // so you have to close this one before opening another.
+                File dataFile = SD.open("location.csv", FILE_WRITE);
+
+                // if the file is available, write to it:
+                if (dataFile)
+                {
+                    dataFile.print(gps.location.lng(), 6);
+                    dataFile.print(",");
+                    dataFile.print(gps.location.lat(), 6);
+                    dataFile.println(",0");
+                    dataFile.close();
+                    // print to the serial port too:
+                    Serial.println(" -W");
+                }
+                // if the file isn't open, pop up an error:
+                else
+                {
+                    Serial.println(" - error opening location.csv");
+                }
+            }
+        }
+    }
 
     blink(blinkFlag);
 
@@ -99,7 +140,7 @@ void loop()
                    inputString.substring(0, 1).equals(CMD_TRACE) &&
                    inputString.substring(1, 2).equals("3"));
 
-    PrintGps(!TRACE_GPS && stringComplete2);
+    //PrintGps(TRACE_GPS && stringComplete2);
 
     ClearSerialEvent(stringComplete);
     ClearSerialEvent2(stringComplete2);
@@ -146,11 +187,10 @@ void PrintGps(bool flag)
                 // if the file is available, write to it:
                 if (dataFile)
                 {
-                    dataFile.print(", ");
                     dataFile.print(LAT);
                     dataFile.print(", ");
                     dataFile.print(LON);
-                    dataFile.print(", 10");
+                    dataFile.println(", 10");
                     dataFile.close();
                     // print to the serial port too:
                     Serial.print(" -W");
